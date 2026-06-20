@@ -1,6 +1,5 @@
 // ============================================
-// 🌾 DEHATIAI WHATSAPP BOT – CLOUD API VERSION
-// (Render کے لیے موزوں، درست Regex)
+// 🌾 DEHATIAI WHATSAPP BOT - CLOUD API VERSION
 // ============================================
 
 require('dotenv').config();
@@ -11,8 +10,19 @@ const fs = require('fs');
 const app = express();
 app.use(express.json());
 
+// ─── Secret File سے Token پڑھیں (یہ نیا کوڈ ہے) ──────
+let WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
+try {
+    if (fs.existsSync('/etc/secrets/token.txt')) {
+        WHATSAPP_TOKEN = fs.readFileSync('/etc/secrets/token.txt', 'utf8').trim();
+        console.log('✅ Token Secret File سے لوڈ ہو گیا!');
+    }
+} catch (err) {
+    console.log('⚠️ Secret File نہیں ملی، Environment Variable استعمال ہوگا');
+}
+// ─────────────────────────────────────────────────────
+
 const PORT = process.env.PORT || 3000;
-const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
 const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN || 'dehati123';
 const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY || '';
@@ -20,7 +30,7 @@ const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY || '';
 console.log('🌾 DehatiAI WhatsApp Bot v7.0 (Cloud API)');
 console.log('═══════════════════════════════════════════════');
 
-// ─── ڈیٹا بیس ──────────────────────────────────────────────
+// ─── 1. ڈیٹا بیس ──────────────────────────────────────────────
 const CROPS = {
     'گندم': { water: '4-6', fert: 'DAP 50kg, Urea 40kg, SOP 25kg', season: 'ربیع' },
     'چاول': { water: '12-15', fert: 'DAP 40kg, Urea 50kg, SOP 20kg', season: 'خریف' },
@@ -252,7 +262,7 @@ async function processMessage(text, phoneNumber) {
         return '🌾 *DehatiAI - کسانوں کا ڈیجیٹل وکیل*\n\n1️⃣ موسم — "موسم"\n2️⃣ منڈی بھاؤ — "منڈی بھاؤ"\n3️⃣ بیماری — "گندم کی بیماری"\n4️⃣ کھاد — "گندم کی کھاد"\n5️⃣ منافع — "گندم 5 ایکڑ منافع"\n6️⃣ اسکیمیں — "پنجاب کی اسکیمیں"\n7️⃣ مویشی — "گائے کو بخار"\n8️⃣ پانی — "گندم 10 ایکڑ پانی"\n9️⃣ بیمہ — "گندم کا بیمہ"\n🔟 شکایت — "شکایت کریں"\n📞 ایمرجنسی: 0800-15000';
     }
 
-    // موسم - درست Regex (اردو حروف کو یونیکوڈ رینج میں ڈھالا)
+    // موسم
     if (lower.includes('موسم') || lower.includes('weather')) {
         var cityMatch = text.match(/(لاہور|ملتان|کراچی|پشاور|اسلام آباد|فیصل آباد|راولپنڈی)/u);
         return await getWeather(cityMatch ? cityMatch[0] : null);
@@ -263,21 +273,21 @@ async function processMessage(text, phoneNumber) {
         return getMandiPrices();
     }
 
-    // بیماری - درست Regex
+    // بیماری
     if (lower.includes('بیماری') || lower.includes('علاج')) {
         var cropMatch = text.match(/(گندم|چاول|مکئی|کپاس)/u);
         if (cropMatch) return getDisease(cropMatch[0]);
         return '🔬 فصل کا نام لکھیں: گندم، چاول، مکئی، کپاس';
     }
 
-    // کھاد - درست Regex
+    // کھاد
     if (lower.includes('کھاد') || lower.includes('نسخہ')) {
         var cropMatch = text.match(/(گندم|چاول|مکئی|کپاس|گنا|آلو|ٹماٹر|پیاز|سرسوں)/u);
         if (cropMatch) return getFertilizer(cropMatch[0]);
         return '🧪 فصل کا نام لکھیں۔';
     }
 
-    // منافع - درست Regex
+    // منافع
     if (lower.includes('منافع') || lower.includes('نقصان') || lower.includes('حساب')) {
         var cropMatch = text.match(/(گندم|چاول|مکئی|کپاس|گنا)/u);
         var acreMatch = text.match(/(\d+)/);
@@ -285,13 +295,13 @@ async function processMessage(text, phoneNumber) {
         return '📊 مثال: "گندم 5 ایکڑ منافع"';
     }
 
-    // اسکیمیں - درست Regex
+    // اسکیمیں
     if (lower.includes('اسکیم') || lower.includes('سبسڈی') || lower.includes('قرض')) {
         var provMatch = text.match(/(پنجاب|سندھ|خیبر|بلوچستان)/u);
         return getSchemes(provMatch ? provMatch[0] : 'پنجاب');
     }
 
-    // مویشی - درست Regex
+    // مویشی
     if (lower.includes('مویشی') || lower.includes('گائے') || lower.includes('بکری') || lower.includes('مرغی')) {
         var animalMatch = text.match(/(گائے|بکری|مرغی)/u);
         var symptomMatch = text.match(/(بخار|کھانا|اسہال)/u);
@@ -299,7 +309,7 @@ async function processMessage(text, phoneNumber) {
         return '🐄 جانور کا نام لکھیں۔';
     }
 
-    // پانی - درست Regex
+    // پانی
     if (lower.includes('پانی') && (lower.includes('ایکڑ') || lower.includes('فصل'))) {
         var cropMatch = text.match(/(گندم|چاول|مکئی|کپاس|گنا)/u);
         var acreMatch = text.match(/(\d+)/);
@@ -307,7 +317,7 @@ async function processMessage(text, phoneNumber) {
         return '💧 مثال: "گندم 10 ایکڑ پانی"';
     }
 
-    // بیمہ - درست Regex
+    // بیمہ
     if (lower.includes('بیمہ') || lower.includes('انشورنس')) {
         var cropMatch = text.match(/(گندم|چاول|مکئی|کپاس)/u);
         return getInsurance(cropMatch ? cropMatch[0] : 'فصل');
@@ -383,15 +393,16 @@ app.post('/webhook', function(req, res) {
     }
 });
 
-// ─── سرور اسٹارٹ ──────────────────────────────────────────
 // ─── ہیلتھ چیک (UptimeRobot کے لیے) ──────────────────────────
-app.get('/', (req, res) => {
+app.get('/', function(req, res) {
     res.status(200).send('OK');
 });
 
-app.get('/health', (req, res) => {
+app.get('/health', function(req, res) {
     res.status(200).send('OK');
 });
+
+// ─── سرور اسٹارٹ ──────────────────────────────────────────
 app.listen(PORT, function() {
     console.log('🚀 سرور چل رہا ہے: http://localhost:' + PORT);
     console.log('📌 ویب ہک URL: https://YOUR_DOMAIN/webhook');
