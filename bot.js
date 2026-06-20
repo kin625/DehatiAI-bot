@@ -384,6 +384,14 @@ app.post('/webhook', function(req, res) {
 });
 
 // ─── سرور اسٹارٹ ──────────────────────────────────────────
+// ─── ہیلتھ چیک (UptimeRobot کے لیے) ──────────────────────────
+app.get('/', (req, res) => {
+    res.status(200).send('OK');
+});
+
+app.get('/health', (req, res) => {
+    res.status(200).send('OK');
+});
 app.listen(PORT, function() {
     console.log('🚀 سرور چل رہا ہے: http://localhost:' + PORT);
     console.log('📌 ویب ہک URL: https://YOUR_DOMAIN/webhook');
